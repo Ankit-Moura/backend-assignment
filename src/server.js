@@ -2,7 +2,7 @@ require("dotenv").config()
 console.log("DB URL:", process.env.POSTGRES_URL)
 const app = require("./app")
 const connectMongo = require("./config/mongo")
-const pool = require("./config/postgres")
+const {pool} = require("./config/postgres")
 const PORT = 5000
 
 
@@ -16,6 +16,8 @@ pool.query("SELECT 1")
     console.error("Postgres error:", err.message)
     process.exit(1)
 })
+
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)

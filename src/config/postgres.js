@@ -12,4 +12,4 @@ pool.on("error", (err) => {
   console.error("Unexpected Postgres error:", err.message)
 })
 
-module.exports = pool
+module.exports = {pool}
