@@ -1,11 +1,12 @@
 const express = require("express")
 const authMiddleware = require("../middleware/authMiddleware")
 const taskRepo = require("../repositories/taskRepository")
-
+const validate = require("../middleware/validate")
+const {createTaskSchema, updateTaskSchema} = require("../validators/taskValidator")
 const router = express.Router()
 
 
-router.post("/", authMiddleware, async (req, res) => {
+router.post("/", authMiddleware, validate(createTaskSchema), async (req, res) => {
   try {
     const userId = req.user.userId
 
@@ -52,7 +53,7 @@ router.get("/:taskId", authMiddleware, async (req, res) => {
   }
 })
 
-router.put("/:taskId", authMiddleware, async (req, res) => {
+router.put("/:taskId", authMiddleware,   validate(updateTaskSchema), async (req, res) => {
   try {
     const updatedTask = await taskRepo.updateTask(
       req.params.taskId,

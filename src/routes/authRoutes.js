@@ -1,9 +1,10 @@
 const express = require("express")
 const authService = require("../services/authService")
-
+const validate = require("../middleware/validate")
 const router = express.Router()
+const {registerSchema} = require("../validators/userValidator")
 
-router.post("/register", async (req, res) => {
+router.post("/register", validate(registerSchema), async (req, res) => {
   try {
     const user = await authService.register(req.body)
     res.json(user)
