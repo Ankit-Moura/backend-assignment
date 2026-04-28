@@ -24,6 +24,10 @@ const getJobs = async () => {
   console.log("Delayed:", delayed.length);
   console.log("Completed:", completed.length);
   console.log("Failed:", failed.length);
+
+ for (let job of delayed){
+  console.log("Job ID:", job.id, job.data);
+}
 };
 
 getJobs()

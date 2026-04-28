@@ -1,22 +1,23 @@
-
+const { v4: uuidv4 } = require("uuid");
 const { pool } = require("../../config/postgres")
 
 class TaskRepository{
 async createTask(task) {
   try {
     const query = `
-      INSERT INTO tasks (id, user_id, title, description, status, due_date)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO tasks (id, user_id, title, description, status, due_date, reminder_job_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *;
     `
 
     const values = [
-      task.id,
+      uuidv4(),
       task.user_id,
       task.title,
       task.description || null,
       task.status || "pending",
-      task.due_date || null
+      task.due_date || null,
+      task.reminder_job_id || null
     ]
 
     const result = await pool.query(query, values)
@@ -96,7 +97,7 @@ async deleteTask(taskId, userId) {
 async getTasksByUser(userId) {
   try {
     const query = `
-      SELECT id, title, description, status, due_date, created_at
+      SELECT *
       FROM tasks
       WHERE user_id = $1
       ORDER BY created_at DESC;
@@ -115,7 +116,7 @@ async getTasksByUser(userId) {
 async getTaskById(taskId, userId) {
   try {
     const query = `
-      SELECT id, user_id, title, description, status, due_date, created_at
+      SELECT *
       FROM tasks
       WHERE id = $1 AND user_id = $2
       LIMIT 1;

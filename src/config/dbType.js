@@ -1,1 +1,1 @@
-module.exports = "mongo" // or "pg"
+module.exports = "pg" // or "mongo"

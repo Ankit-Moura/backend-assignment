@@ -1,4 +1,4 @@
-
+const { v4: uuidv4 } = require("uuid");
 const { pool } = require("../../config/postgres")
 
 class UserRepository {
@@ -14,6 +14,7 @@ class UserRepository {
         username VARCHAR(255),
         email VARCHAR(255) UNIQUE NOT NULL,
         password TEXT NOT NULL,
+        
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `)
@@ -27,6 +28,7 @@ class UserRepository {
         description TEXT,
         status VARCHAR(20) DEFAULT 'pending',
         due_date TIMESTAMP,
+        reminder_job_id VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
@@ -78,7 +80,7 @@ class UserRepository {
       `
 
       const values = [
-        user.id,
+        uuidv4(),
         user.username,
         user.email,
         user.password

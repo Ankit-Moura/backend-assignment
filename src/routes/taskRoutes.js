@@ -22,9 +22,9 @@ router.post("/", authMiddleware, validate(createTaskSchema), async (req, res) =>
       
     })
 
-    const job_id = schedule_task(task, userId)
+    const job_id = await schedule_task(task, userId)
     let updated_task = null
-    if (job_id!==-1){
+    if (job_id&&job_id!==-1){
       updated_task = await taskRepo.updateTask(task.id, userId,{
       reminder_job_id: job_id
     });
@@ -79,6 +79,7 @@ router.put("/:taskId", authMiddleware, validate(updateTaskSchema), async (req, r
     }
 
     const oldJobId = existingTask.reminder_job_id;
+    console.log("updating old job reminder: "+ oldJobId+ " "+ typeof(oldJobId))
 
     const statusChangedToCompleted =
       req.body.status && req.body.status === "completed" && existingTask.status !== "completed";
@@ -89,8 +90,12 @@ router.put("/:taskId", authMiddleware, validate(updateTaskSchema), async (req, r
     // Cancel old job if needed
     if (oldJobId && (statusChangedToCompleted || dueDateChanged)) {
       const oldJob = await reminderQueue.getJob(oldJobId);
+      console.log("cancelling old job")
       if (oldJob) {
         await oldJob.remove();
+        await taskRepo.updateTask(taskId, userId, {
+        reminder_job_id: null
+      })
       }
     }
 
@@ -108,7 +113,7 @@ router.put("/:taskId", authMiddleware, validate(updateTaskSchema), async (req, r
         "task-reminder",
         {
           taskId: updatedTask.id,
-          message: updatedTask.title,
+          message: updatedTask.title||existingTask.title,
           userId: userId
         },
         {
@@ -122,6 +127,7 @@ router.put("/:taskId", authMiddleware, validate(updateTaskSchema), async (req, r
       await taskRepo.updateTask(updatedTask.id, userId, {
         reminder_job_id: job.id
       });
+      console.log("stored new job id: "+ job.id)
     }
 
     res.json(updatedTask);
@@ -133,6 +139,24 @@ router.put("/:taskId", authMiddleware, validate(updateTaskSchema), async (req, r
 
 router.delete("/:taskId", authMiddleware, async (req, res) => {
   try {
+    const taskId = req.params.taskId;
+    const userId = req.user.userId;
+    const existingTask = await taskRepo.getTaskById(taskId, userId);
+
+    if (!existingTask) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    const oldJobId = existingTask.reminder_job_id;
+    if(oldJobId){
+      console.log("deleting old job reminder: "+ oldJobId+ " "+ typeof(oldJobId))
+       const oldJob = await reminderQueue.getJob(oldJobId);
+      console.log("cancelling old job")
+      if (oldJob) {
+        await oldJob.remove();
+      }
+    }
+
     await taskRepo.deleteTask(
       req.params.taskId,
       req.user.userId

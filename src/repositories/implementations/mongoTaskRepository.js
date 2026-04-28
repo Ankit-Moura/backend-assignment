@@ -50,6 +50,7 @@ class MongoTaskRepository {
         description: doc.description,
         status: doc.status,
         due_date: doc.due_date,
+        reminder_job_id: task.reminder_job_id||null,
         created_at: doc.created_at
       }
 
@@ -75,6 +76,7 @@ class MongoTaskRepository {
         description: t.description,
         status: t.status,
         due_date: t.due_date,
+        reminder_job_id: task.reminder_job_id||null,
         created_at: t.created_at
       }))
 
@@ -102,6 +104,7 @@ class MongoTaskRepository {
         description: task.description,
         status: task.status,
         due_date: task.due_date,
+        reminder_job_id: task.reminder_job_id||null,
         created_at: task.created_at
       }
 
@@ -206,6 +209,7 @@ class MongoTaskRepository {
         description: t.description,
         status: t.status,
         due_date: t.due_date,
+        reminder_job_id: task.reminder_job_id||null,
         created_at: t.created_at
       }))
 
