@@ -18,7 +18,7 @@ A backend API for user authentication and task management with secure JWT-based 
 ## Setup Instructions
 
 ### 1. Clone repo
-git clone <repo-url>
+git clone .
 cd task-manager-api
 
 ### 2. Install dependencies

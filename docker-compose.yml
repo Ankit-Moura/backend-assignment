@@ -9,9 +9,12 @@ services:
     environment:
       - POSTGRES_URL=postgresql://user:password@postgres:5432/taskdb
       - MONGO_URI=mongodb://mongo:27017/taskdb
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       - postgres
       - mongo
+      - redis
     volumes:
       - .:/app
     command: npm run dev
@@ -33,7 +36,29 @@ services:
     restart: always
     volumes:
       - mongo_data:/data/db
+  
+  worker:
+    build: .
+    container_name: worker_app
+    depends_on:
+      - redis
+    environment:
+    - REDIS_HOST=redis
+    - REDIS_PORT=6379
+    command: node src/queue/workers/reminder.worker.js
+    volumes:
+    - .:/app
+
+  redis:
+    image: redis:7
+    container_name: redis_db
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
 
 volumes:
   pg_data:
   mongo_data:
+  redis_data:

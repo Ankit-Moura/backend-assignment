@@ -115,7 +115,7 @@ class MongoTaskRepository {
     try {
       await connectDB()
 
-      const allowedFields = ["title", "description", "status", "due_date"]
+      const allowedFields = ["title", "description", "status", "due_date", "reminder_job_id"]
 
       const updateData = {}
 
@@ -153,6 +153,7 @@ class MongoTaskRepository {
         description: t.description,
         status: t.status,
         due_date: t.due_date,
+        reminder_job_id: t.reminder_job_id || null,
         created_at: t.created_at
       }
 

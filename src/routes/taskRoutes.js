@@ -3,6 +3,9 @@ const authMiddleware = require("../middleware/authMiddleware")
 const taskRepo = require("../repositories/taskRepository")
 const validate = require("../middleware/validate")
 const {createTaskSchema, updateTaskSchema} = require("../validators/taskValidator")
+const reminderQueue = require("../queue/queues/reminder.queue")
+const calculateDelay = require("../utils/calculateDelay")
+const schedule_task = require("../utils/scheduleTask")
 const router = express.Router()
 
 
@@ -15,10 +18,20 @@ router.post("/", authMiddleware, validate(createTaskSchema), async (req, res) =>
       title: req.body.title,
       description: req.body.description,
       status: req.body.status,
-      due_date: req.body.due_date
+      due_date: req.body.due_date,
+      
     })
 
-    res.json(task)
+    const job_id = schedule_task(task, userId)
+    let updated_task = null
+    if (job_id!==-1){
+      updated_task = await taskRepo.updateTask(task.id, userId,{
+      reminder_job_id: job_id
+    });
+    return res.json(updated_task)
+    }
+
+    return res.json(task)
   } catch (err) {
     res.status(400).json({ error: err.message })
   }
@@ -53,19 +66,70 @@ router.get("/:taskId", authMiddleware, async (req, res) => {
   }
 })
 
-router.put("/:taskId", authMiddleware,   validate(updateTaskSchema), async (req, res) => {
+router.put("/:taskId", authMiddleware, validate(updateTaskSchema), async (req, res) => {
   try {
-    const updatedTask = await taskRepo.updateTask(
-      req.params.taskId,
-      req.user.userId,
-      req.body
-    )
+    const taskId = req.params.taskId;
+    const userId = req.user.userId;
 
-    res.json(updatedTask)
+    
+    const existingTask = await taskRepo.getTaskById(taskId, userId);
+
+    if (!existingTask) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    const oldJobId = existingTask.reminder_job_id;
+
+    const statusChangedToCompleted =
+      req.body.status && req.body.status === "completed" && existingTask.status !== "completed";
+
+    const dueDateChanged =
+      req.body.due_date && req.body.due_date !== existingTask.due_date;
+
+    // Cancel old job if needed
+    if (oldJobId && (statusChangedToCompleted || dueDateChanged)) {
+      const oldJob = await reminderQueue.getJob(oldJobId);
+      if (oldJob) {
+        await oldJob.remove();
+      }
+    }
+
+    //  Update task in DB
+    const updatedTask = await taskRepo.updateTask(taskId, userId, req.body);
+
+    //  Decide if we need to reschedule
+    const shouldSchedule =
+      updatedTask.due_date && updatedTask.status !== "completed";
+
+    if (shouldSchedule && (dueDateChanged || !oldJobId)) {
+      const delay = calculateDelay(updatedTask.due_date);
+
+      const job = await reminderQueue.add(
+        "task-reminder",
+        {
+          taskId: updatedTask.id,
+          message: updatedTask.title,
+          userId: userId
+        },
+        {
+          delay,
+          removeOnComplete: true,
+          attempts: 3
+        }
+      );
+
+      // Store new job ID
+      await taskRepo.updateTask(updatedTask.id, userId, {
+        reminder_job_id: job.id
+      });
+    }
+
+    res.json(updatedTask);
+
   } catch (err) {
-    res.status(400).json({ error: err.message })
+    res.status(400).json({ error: err.message });
   }
-})
+});
 
 router.delete("/:taskId", authMiddleware, async (req, res) => {
   try {

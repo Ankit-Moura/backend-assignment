@@ -1,7 +1,7 @@
 require("dotenv").config()
 
-const userRepo = require("./repositories/userRepository")
-const taskRepo = require("./repositories/taskRepository")
+const userRepo = require("../repositories/userRepository")
+const taskRepo = require("../repositories/taskRepository")
 
 const { v4: uuidv4 } = require("uuid")
 const bcrypt = require("bcrypt")
