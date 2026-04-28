@@ -49,6 +49,18 @@ services:
     volumes:
     - .:/app
 
+  completion_worker:
+    build: .
+    container_name: completion_worker
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    command: node src/queue/workers/completion.worker.js
+    volumes:
+    - .:/app
+
   redis:
     image: redis:7
     container_name: redis_db

@@ -8,6 +8,7 @@ const calculateDelay = require("../utils/calculateDelay")
 const schedule_task = require("../utils/scheduleTask")
 const router = express.Router()
 
+const completionQueue = require("../queue/queues/completion.queue")
 
 router.post("/", authMiddleware, validate(createTaskSchema), async (req, res) => {
   try {
@@ -99,12 +100,24 @@ router.put("/:taskId", authMiddleware, validate(updateTaskSchema), async (req, r
       }
     }
 
+    
+
     //  Update task in DB
     const updatedTask = await taskRepo.updateTask(taskId, userId, req.body);
 
     //  Decide if we need to reschedule
     const shouldSchedule =
       updatedTask.due_date && updatedTask.status !== "completed";
+
+    if (statusChangedToCompleted){
+        await completionQueue.add("task-completed", {
+          event: "TASK_COMPLETED",
+          taskId: updatedTask.id,
+          title: updatedTask.title,
+          userId: updatedTask.user_id,
+          completedAt: new Date().toISOString()
+        });
+    }
 
     if (shouldSchedule && (dueDateChanged || !oldJobId)) {
       const delay = calculateDelay(updatedTask.due_date);
