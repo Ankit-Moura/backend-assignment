@@ -87,7 +87,7 @@ class MongoTaskRepository {
         status: doc.status,
         due_date: doc.due_date,
         category: doc.category,
-        tags: (t.tags || []).map(tag => tag.toString()), // ✅ return as strings
+        tags: (doc.tags || []).map(tag => tag.toString()), // ✅ return as strings
         created_at: doc.created_at
       }
 
@@ -145,7 +145,7 @@ class MongoTaskRepository {
         due_date: task.due_date,
         reminder_job_id: task.reminder_job_id,
         category: task.category,
-        tags: (t.tags || []).map(tag => tag.toString()),
+        tags: (task.tags || []).map(tag => tag.toString()),
         created_at: task.created_at
       }
 
