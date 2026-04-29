@@ -15,6 +15,7 @@ router.post("/", authMiddleware, validate(createTaskSchema), async (req, res) =>
     const userId = req.user.userId
 
     const task = await taskRepo.createTask({
+      ...req.body,
       user_id: userId,
       title: req.body.title,
       description: req.body.description,
@@ -42,8 +43,19 @@ router.post("/", authMiddleware, validate(createTaskSchema), async (req, res) =>
 router.get("/", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId
+     const { tags, matchAll } = req.query
 
-    const tasks = await taskRepo.getTasksByUser(userId)
+    let options = {}
+
+    if (tags) {
+      options.tagIds = tags.split(",") // "id1,id2"
+    }
+
+    if (matchAll === "true") {
+      options.matchAll = true
+    }
+
+    const tasks = tags?await taskRepo.getTasksByTags(userId, options):await taskRepo.getTasksByUser(userId)
 
     res.json(tasks)
   } catch (err) {

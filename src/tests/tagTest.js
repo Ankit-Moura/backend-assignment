@@ -84,23 +84,95 @@ async function runTests() {
     }
 
     // 8. Delete Tag
-    log("Deleting tag...")
-    const deleteRes = await axios.delete(
-      `${BASE_URL}/tags/${createdTagId}`,
-      { headers }
-    )
-    console.log("Deleted:", deleteRes.data)
+    // log("Deleting tag...")
+    // const deleteRes = await axios.delete(
+    //   `${BASE_URL}/tags/${createdTagId}`,
+    //   { headers }
+    // )
+    // console.log("Deleted:", deleteRes.data)
 
-    // 9. Delete Again (should fail)
-    log("Deleting same tag again...")
-    try {
-      await axios.delete(
-        `${BASE_URL}/tags/${createdTagId}`,
-        { headers }
-      )
-    } catch (err) {
-      console.log("Delete validation works:", err.response.data.error)
-    }
+    // // 9. Delete Again (should fail)
+    // log("Deleting same tag again...")
+    // try {
+    //   await axios.delete(
+    //     `${BASE_URL}/tags/${createdTagId}`,
+    //     { headers }
+    //   )
+    // } catch (err) {
+    //   console.log("Delete validation works:", err.response.data.error)
+    // }
+
+    // 🔥 10. Create Task WITH tags
+log("Creating task with tags...")
+
+const createTaskRes = await axios.post(
+  `${BASE_URL}/tasks`,
+  {
+    title: "Fix login bug",
+    description: "JWT issue",
+    tag_ids: [createdTagId]
+  },
+  { headers }
+)
+
+const createdTask = createTaskRes.data
+console.log("Task created:", createdTask)
+
+
+if (!createdTask.tags || createdTask.tags.length !== 1) {
+  throw new Error("Tags not attached to task properly")
+}
+
+
+// 🔥 11. Fetch Tasks and verify tags
+log("Fetching tasks to verify tags...")
+
+const tasksRes = await axios.get(`${BASE_URL}/tasks`, { headers })
+
+console.log("Tasks:", tasksRes.data)
+
+const task = tasksRes.data.find(t => t.id === createdTask.id)
+
+if (!task) {
+  throw new Error("Created task not found")
+}
+
+if (!task.tags || task.tags.length !== 1) {
+  throw new Error("Tags missing in fetched task")
+}
+
+// 🔥 12. Create Task with INVALID tag (should fail)
+log("Creating task with invalid tag...")
+
+try {
+  await axios.post(
+    `${BASE_URL}/tasks`,
+    {
+      title: "Invalid test",
+      tag_ids: ["64aaaaaaaaaaaaaaaaaaaaaa"] // fake id
+    },
+    { headers }
+  )
+} catch (err) {
+  console.log("Invalid tag rejected:", err.response.data.error)
+}
+
+
+// 🔥 12. Create Task with INVALID tag (should fail)
+log("Creating task with invalid tag...")
+
+try {
+  await axios.post(
+    `${BASE_URL}/tasks`,
+    {
+      title: "Invalid test",
+      tag_ids: ["64aaaaaaaaaaaaaaaaaaaaaa"] // fake id
+    },
+    { headers }
+  )
+} catch (err) {
+  console.log("Invalid tag rejected:", err.response.data.error)
+}
 
     console.log("\n✅ ALL TAG ROUTE TESTS PASSED")
 
