@@ -5,8 +5,8 @@ class TaskRepository{
 async createTask(task) {
   try {
     const query = `
-      INSERT INTO tasks (id, user_id, title, description, status, due_date, reminder_job_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO tasks (id, user_id, title, description, status, due_date, reminder_job_id, category)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *;
     `
 
@@ -17,8 +17,10 @@ async createTask(task) {
       task.description || null,
       task.status || "pending",
       task.due_date || null,
-      task.reminder_job_id || null
+      task.reminder_job_id || null,
+      task.category || null,
     ]
+    console.log("category->"+ task.category)
 
     const result = await pool.query(query, values)
     return result.rows[0]

@@ -20,6 +20,7 @@ router.post("/", authMiddleware, validate(createTaskSchema), async (req, res) =>
       description: req.body.description,
       status: req.body.status,
       due_date: req.body.due_date,
+      category: req.body.category,
       
     })
 

@@ -29,17 +29,57 @@ class UserRepository {
         status VARCHAR(20) DEFAULT 'pending',
         due_date TIMESTAMP,
         reminder_job_id VARCHAR(255),
+        category VARCHAR(30),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
     `)
+      // create tags table
+      await pool.query(`
+      CREATE TABLE IF NOT EXISTS tags (
+        id UUID PRIMARY KEY,
+        user_id UUID NOT NULL,
+        name TEXT NOT NULL,
+        UNIQUE(user_id, name),
 
-    // 4. Verify BOTH tables exist
+        FOREIGN KEY (user_id)
+          REFERENCES users(id)
+          ON DELETE CASCADE
+      );
+    `)
+
+    //create task_tag table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS task_tags (
+        task_id UUID NOT NULL,
+        tag_id UUID NOT NULL,
+        PRIMARY KEY (task_id, tag_id),
+
+        FOREIGN KEY (task_id)
+          REFERENCES tasks(id)
+          ON DELETE CASCADE,
+
+        FOREIGN KEY (tag_id)
+          REFERENCES tags(id)
+          ON DELETE CASCADE
+      );
+    `)
+
+    // 4. Verify all tables exist
+    const requiredTables = ['users', 'tasks', 'tags', 'task_tags']
     const result = await pool.query(`
       SELECT table_name 
       FROM information_schema.tables 
-      WHERE table_name IN ('users', 'tasks');
+      WHERE table_name IN ('users', 'tasks', 'tags', 'task_tags');
     `)
+
+    const existingTables = result.rows.map(r => r.table_name)
+
+    const missing = requiredTables.filter(t => !existingTables.includes(t))
+
+    if (missing.length > 0) {
+      throw new Error(`Missing tables: ${missing.join(", ")}`)
+    }
 
     // Indexes
     await pool.query(`
