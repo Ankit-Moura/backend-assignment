@@ -1,35 +1,32 @@
-const { MongoClient, ObjectId } = require("mongodb")
-require("dotenv").config()
-
-const uri = process.env.MONGO_URI
-const client = new MongoClient(uri)
-
-let db
+const connectDB = require("../../config/mongo")
+let initialized = false
 let usersCollection
 
-// ---------- Internal helper ----------
-async function connectDB() {
-  if (!db) {
-    await client.connect()
-    db = client.db("taskdb") // keep same logical DB name
-    usersCollection = db.collection("users")
+async function init() {
+  if (initialized) return
+  const db = await connectDB()
 
-    // Create index (equivalent to PG unique constraint)
-    await usersCollection.createIndex(
-      { email: 1 },
-      { unique: true }
-    )
+  usersCollection = db.collection("users")
 
-    console.log("MongoDB connected")
-  }
+  await usersCollection.createIndex(
+    { email: 1 },
+    { unique: true }
+  )
+
+  initialized = true
+
+  return db
 }
 
 // ---------- Repository ----------
 class MongoUserRepository {
 
+  
+
   async checkDbHealth() {
     try {
-      await connectDB()
+      
+      const db = await init()
 
       // Basic ping
       await db.command({ ping: 1 })
