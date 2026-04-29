@@ -7,6 +7,7 @@ const reminderQueue = require("../queue/queues/reminder.queue")
 const calculateDelay = require("../utils/calculateDelay")
 const schedule_task = require("../utils/scheduleTask")
 const router = express.Router()
+const {sendWebhook}= require("../utils/webhook")
 
 const completionQueue = require("../queue/queues/completion.queue")
 
@@ -130,6 +131,14 @@ router.put("/:taskId", authMiddleware, validate(updateTaskSchema), async (req, r
           userId: updatedTask.user_id,
           completedAt: new Date().toISOString()
         });
+        sendWebhook({
+    taskId: updatedTask.id,
+    title: updatedTask.title,
+    userId: updatedTask.user_id,
+    completedAt: new Date().toISOString()
+  }).catch(err => {
+    console.error("Webhook failed:", err.message)
+  })
     }
 
     if (shouldSchedule && (dueDateChanged || !oldJobId)) {

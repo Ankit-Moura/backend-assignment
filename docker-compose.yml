@@ -11,6 +11,7 @@ services:
       - MONGO_URI=mongodb://mongo:27017/taskdb
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - WEBHOOK_URL=https://webhook.site/123fd346-60dd-4393-8ea4-0b559a358458
     depends_on:
       - postgres
       - mongo
